@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
-BASE_FRONTEND_URL = "http://localhost:3000"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,6 +64,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
     # Third Party Middleware:
     "allauth.account.middleware.AccountMiddleware",
 ]
@@ -89,18 +89,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "app.wsgi.application"
 
-
 # Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "HOST": os.getenv("DB_HOST"),
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASS"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -163,14 +156,6 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
-# ALLAUTH - verify through email
-ACCOUNT_EMAIL_VERIFICATION = True  # Always verify through email
-# <EMAIL_CONFIRM_REDIRECT_BASE_URL>/<key>
-EMAIL_CONFIRM_REDIRECT_BASE_URL = f"{BASE_FRONTEND_URL}/email/confirm/"
-# <PASSWORD_RESET_CONFIRM_REDIRECT_BASE_URL>/<uidb64>/<token>/
-PASSWORD_RESET_CONFIRM_REDIRECT_BASE_URL = (
-    f"{BASE_FRONTEND_URL}/password-reset/confirm/"
-)
 
 # SITE
 SITE_ID = 1
@@ -198,12 +183,6 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-# CORS
-CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ALLOWED_ORIGINS", BASE_FRONTEND_URL
-).split(",")
-# or
-# CORS_ALLOW_ALL_ORIGINS = True # for dev only
 
 # PROJECT
 PROJECT_NAME = "Arkleg Bill Tracker"
@@ -211,20 +190,15 @@ PROJECT_NAME = "Arkleg Bill Tracker"
 # LEGISCAN
 LEGISCAN_API_KEY = os.getenv("LEGISCAN_API_KEY")
 LEGISCAN_STATE = "AR"
+print("LEGISCAN_API_KEY", LEGISCAN_API_KEY)
 
 # Django Q
 Q_CLUSTER = {
     "name": "DjangoQ",
     "workers": int(os.getenv("Q_CLUSTER_WORKERS", 4)),  # Default to 4 workers
-    "timeout": int(
-        os.getenv("Q_CLUSTER_TIMEOUT", 60)
-    ),  # Execution timeout in seconds
-    "retry": int(
-        os.getenv("Q_CLUSTER_RETRY", 200)
-    ),  # Retry failed tasks after 200s
-    "queue_limit": int(
-        os.getenv("Q_CLUSTER_QUEUE_LIMIT", 50)
-    ),  # Max queued tasks
+    "timeout": int(os.getenv("Q_CLUSTER_TIMEOUT", 60)),  # Execution timeout in seconds
+    "retry": int(os.getenv("Q_CLUSTER_RETRY", 200)),  # Retry failed tasks after 200s
+    "queue_limit": int(os.getenv("Q_CLUSTER_QUEUE_LIMIT", 50)),  # Max queued tasks
     "bulk": int(
         os.getenv("Q_CLUSTER_BULK", 10)
     ),  # Number of tasks workers process at a time
