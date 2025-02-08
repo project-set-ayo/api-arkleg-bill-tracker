@@ -1,0 +1,16 @@
+Django
+djangorestframework
+django-allauth
+dj-rest-auth[with_social]
+psycopg2
+drf-spectacular
+django-cities-light
+django-cors-headers
+paypalrestsdk
+pillow
+django-phonenumber-field[phonenumbers]
+django-model-utils
+django-q
+python-dotenv
+gunicorn
+django_extensions

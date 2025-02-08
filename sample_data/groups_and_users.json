@@ -1,0 +1,70 @@
+[
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "public",
+      "permissions": []
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "admin",
+      "permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "fields": {
+      "password": "",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "P_John",
+      "last_name": "Doe",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-22T20:37:45.571Z",
+      "email": "p_john@example.com",
+      "phone_number": "5551234561",
+      "img": "",
+      "groups": [["public"]],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "fields": {
+      "password": "",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "P_Jane",
+      "last_name": "Doe",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-22T20:37:45.573Z",
+      "email": "p_jane@example.com",
+      "phone_number": "5551234562",
+      "img": "",
+      "groups": [["public"]],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "fields": {
+      "password": "",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "A_Janie",
+      "last_name": "Ginocchio",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2025-01-22T20:37:45.575Z",
+      "email": "a_janie@example.com",
+      "phone_number": "555121497",
+      "img": "",
+      "groups": [["admin"]],
+      "user_permissions": []
+    }
+  }
+]
