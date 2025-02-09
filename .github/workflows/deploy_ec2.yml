@@ -25,6 +25,7 @@ jobs:
             git fetch --all
             git reset --hard origin/main
             git clean -df
+            source env/bin/activate
             python3 manage.py collectstatic
             sudo systemctl restart gunicorn nginx
           EOF
