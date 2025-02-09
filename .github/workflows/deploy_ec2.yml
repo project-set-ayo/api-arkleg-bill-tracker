@@ -1,0 +1,30 @@
+name: Arkleg Backend 
+
+on: 
+  push:
+    branches: [ main ]
+    
+jobs:
+  Deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set Up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SECRET_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Executing Remote SSH Commands
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd /var/www/api-arkleg-bill-tracker
+            git fetch --all
+            git reset --hard origin/main
+            git clean -df
+            python3 manage.py collectstatic
+            sudo systemctl restart gunicorn nginx
+          EOF
