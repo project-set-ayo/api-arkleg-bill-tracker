@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "user",
     "authentication",
     "bill",
+    "ads",
 ]
 
 MIDDLEWARE = [

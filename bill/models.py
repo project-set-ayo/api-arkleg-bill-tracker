@@ -33,9 +33,7 @@ class Bill(models.Model):
     legiscan_bill_id = models.CharField(
         max_length=100, unique=True, null=True, blank=True
     )
-    bill_number = models.CharField(
-        max_length=100, unique=True, null=True, blank=True
-    )
+    bill_number = models.CharField(max_length=100, unique=True, null=True, blank=True)
     bill_title = models.CharField(max_length=255, null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="bills", blank=True)
     admin_stance = models.CharField(
@@ -73,9 +71,7 @@ class UserBillInteraction(TimeStampedModel):
 class UserKeyword(TimeStampedModel):
     """Represents keyword monitored by user."""
 
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="keywords"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="keywords")
     keyword = models.CharField(max_length=255)
 
     class Meta:
