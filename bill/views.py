@@ -2,6 +2,7 @@
 
 import requests
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
@@ -60,9 +61,7 @@ class BillSearchAPIView(APIView):
         query = request.GET.get("query")  # Full-text search
         sponsor = request.GET.get("sponsor")
         chamber = request.GET.get("chamber")  # "Senate" or "House"
-        type = request.GET.get(
-            "type"
-        )  # "Bill", "Resolution" or "Joint Resolution"
+        type = request.GET.get("type")  # "Bill", "Resolution" or "Joint Resolution"
 
         results = fetch_bills()[1:]
 
@@ -164,9 +163,7 @@ class BillDetailView(APIView):
                 user=request.user, bill=bill
             ).first()
             if interaction:
-                user_interaction = UserBillInteractionSerializer(
-                    interaction
-                ).data
+                user_interaction = UserBillInteractionSerializer(interaction).data
 
         return Response(
             {
@@ -200,22 +197,18 @@ class BillDetailView(APIView):
         )
 
         # Ensure user interaction is either updated or created
-        user_interaction, created = (
-            UserBillInteraction.objects.update_or_create(
-                user=request.user,
-                bill=bill,
-                defaults={
-                    "stance": request.data.get("stance"),
-                    "note": request.data.get("note"),
-                },
-            )
+        user_interaction, created = UserBillInteraction.objects.update_or_create(
+            user=request.user,
+            bill=bill,
+            defaults={
+                "stance": request.data.get("stance"),
+                "note": request.data.get("note"),
+            },
         )
 
         return Response(
             UserBillInteractionSerializer(user_interaction).data,
-            status=(
-                status.HTTP_200_OK if not created else status.HTTP_201_CREATED
-            ),
+            status=(status.HTTP_200_OK if not created else status.HTTP_201_CREATED),
         )
 
     def patch(self, request, legiscan_bill_id):
@@ -282,16 +275,77 @@ class BillDetailView(APIView):
         )
 
 
-class UserBillInteractionListView(ListAPIView):
-    """Returns a list of all bills the authenticated user has interacted with."""
+class UserBillInteractionViewSet(viewsets.ViewSet):
+    """
+    ViewSet for managing user interactions with bills.
+    Handles listing all interactions, retrieving, updating, and deleting a specific interaction.
+    """
 
-    serializer_class = UserBillInteractionSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return UserBillInteraction.objects.filter(
-            user=self.request.user
-        ).order_by("-modified")
+    def retrieve(self, request, legiscan_bill_id=None):
+        """Handles GET: Retrieve a specific user-bill interaction."""
+        bill = get_object_or_404(Bill, legiscan_bill_id=legiscan_bill_id)
+        interaction = UserBillInteraction.objects.filter(
+            user=request.user, bill=bill
+        ).first()
+
+        if not interaction:
+            return Response(
+                {"error": "No interaction found for this bill."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(UserBillInteractionSerializer(interaction).data)
+
+    def list(self, request):
+        """Handles GET: List all interactions for the authenticated user."""
+        interactions = UserBillInteraction.objects.filter(user=request.user).order_by(
+            "-modified"
+        )
+        serializer = UserBillInteractionSerializer(interactions, many=True)
+        return Response(serializer.data)
+
+    def destroy(self, request, legiscan_bill_id=None):
+        """Handles DELETE: Deletes a user's interaction with a bill."""
+        bill = get_object_or_404(Bill, legiscan_bill_id=legiscan_bill_id)
+        interaction = UserBillInteraction.objects.filter(
+            user=request.user, bill=bill
+        ).first()
+
+        if not interaction:
+            return Response(
+                {"error": "No interaction found to delete."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        interaction.delete()
+        return Response(
+            {"message": "Interaction deleted successfully."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+    @action(detail=True, methods=["POST", "PATCH"], url_path="update-or-create")
+    def update_or_create_interaction(self, request, legiscan_bill_id=None):
+        """
+        Handles POST & PATCH: Creates or updates a user's interaction with a bill.
+        If an interaction exists, update it. If not, create a new one.
+        """
+        bill, _ = Bill.objects.get_or_create(legiscan_bill_id=legiscan_bill_id)
+
+        interaction, created = UserBillInteraction.objects.update_or_create(
+            user=request.user,
+            bill=bill,
+            defaults={
+                "stance": request.data.get("stance"),
+                "note": request.data.get("note"),
+            },
+        )
+
+        return Response(
+            UserBillInteractionSerializer(interaction).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 
 class UserKeywordViewSet(viewsets.ModelViewSet):
@@ -332,9 +386,7 @@ class UserKeywordViewSet(viewsets.ModelViewSet):
         )
         deleted_count, _ = keywords_to_delete.delete()
 
-        return Response(
-            {"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT
-        )
+        return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["GET"], url_path="matching-bills")
     def matching_bills(self, request):
@@ -375,9 +427,7 @@ class AdminBillViewSet(viewsets.ViewSet):
         """
         try:
             bill = Bill.objects.get(legiscan_bill_id=legiscan_bill_id)
-            serializer = AdminBillSerializer(
-                bill, data=request.data, partial=True
-            )
+            serializer = AdminBillSerializer(bill, data=request.data, partial=True)
         except Bill.DoesNotExist:
             request.data["legiscan_bill_id"] = legiscan_bill_id
             serializer = AdminBillSerializer(data=request.data)
@@ -393,8 +443,6 @@ class AdminBillViewSet(viewsets.ViewSet):
             bill = Bill.objects.get(legiscan_bill_id=legiscan_bill_id)
             serializer = AdminBillSerializer()
             serializer.delete_admin_info(bill)
-            return Response(
-                {"message": "Admin information removed."}, status=204
-            )
+            return Response({"message": "Admin information removed."}, status=204)
         except Bill.DoesNotExist:
             return Response({"error": "Bill not found"}, status=404)

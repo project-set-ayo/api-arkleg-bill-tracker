@@ -5,30 +5,25 @@ from .views import (
     BillSearchAPIView,
     BillDetailView,
     BillViewSet,
-    UserBillInteractionListView,
     UserKeywordViewSet,
+    UserBillInteractionViewSet,
     AdminBillViewSet,
 )
 
 
-router = DefaultRouter()
-router.register(r"", UserKeywordViewSet, basename="user-keywords")
+user_keyword_router = DefaultRouter()
+user_keyword_router.register(r"keyword", UserKeywordViewSet, basename="user-keywords")
+
 
 urlpatterns = [
     # order-matters!
     # keywords
-    path("user/keywords/", include(router.urls)),
+    path("user/", include(user_keyword_router.urls)),
     # search
     path("search/", BillSearchAPIView.as_view(), name="bill-search"),
     # tags, no-legiscan
     path("search-by-tags/", BillViewSet.as_view({"get": "filter_by_tags"})),
     path("tags/", BillViewSet.as_view({"get": "get_all_tags"})),
-    # interaction
-    path(
-        "interactions/",
-        UserBillInteractionListView.as_view(),
-        name="user-bill-interactions",
-    ),
     # list
     path("", BillListAPIView.as_view(), name="bill-list"),
     # detail
@@ -36,6 +31,24 @@ urlpatterns = [
         "<str:legiscan_bill_id>/",
         BillDetailView.as_view(),
         name="bill-detail",
+    ),
+    # user-interaction
+    path(
+        "user/interaction/",
+        UserBillInteractionViewSet.as_view({"get": "list"}),
+        name="user-bill-interactions-list",
+    ),
+    path(
+        "user/interaction/<str:legiscan_bill_id>/",
+        UserBillInteractionViewSet.as_view(
+            {
+                "get": "retrieve",
+                "post": "update_or_create_interaction",
+                "patch": "update_or_create_interaction",
+                "delete": "destroy",
+            }
+        ),
+        name="user-bill-interactions-detail",
     ),
     # admin-only
     path(
