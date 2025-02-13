@@ -4,14 +4,9 @@ from django.conf import settings
 from .models import Bill
 
 # TODO consolidate functionality between get-bills and full-text-search (query)
-LEGISCAN_SEARCH_URL = "https://api.legiscan.com/?key={key}&op=getSearch&state={state}&query={query}"
-
-import requests
-from django.conf import settings
-
 LEGISCAN_API_KEY = settings.LEGISCAN_API_KEY
-LEGISCAN_API_URL = (
-    "https://api.legiscan.com/?key={api_key}&op=getBill&id={bill_id}"
+LEGISCAN_SEARCH_URL = (
+    "https://api.legiscan.com/?key={key}&op=getSearch&state={state}&query={query}"
 )
 
 
@@ -95,6 +90,27 @@ def full_text_search(query):
     return list(response.json().get("searchresult", {}).values())
 
 
+def get_or_create_bill(legiscan_bill_id):
+    """
+    Retrieves a Bill from the database, or creates and prepopulates it
+    using data from the LegiScan API if necessary.
+    """
+    bill, created = Bill.objects.get_or_create(
+        legiscan_bill_id=legiscan_bill_id,
+        defaults={"bill_title": None, "bill_number": None},
+    )
+
+    # If bill was just created or lacks essential data, fetch from API
+    if created or not bill.bill_title or not bill.bill_number:
+        bill_data = fetch_bill(legiscan_bill_id)
+        if bill_data:
+            bill.bill_title = bill_data.get("title", "Unknown Title")
+            bill.bill_number = bill_data.get("bill_number", "Unknown Number")
+            bill.save()
+
+    return bill
+
+
 def format_email_digest(user, keyword_dict):
     """Generates an HTML-formatted email digest for a user based on their keyword matches."""
     email_subject = "Your Daily Bill Digest"
@@ -102,7 +118,7 @@ def format_email_digest(user, keyword_dict):
     email_body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2 style="color: #2C3E50;">Hello {user.username},</h2>
+        <h2 style="color: #2C3E50;">Hello,</h2>
         <p>Here are the latest bills matching your saved keywords:</p>
         <hr>
     """

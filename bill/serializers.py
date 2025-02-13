@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .utils import fetch_legiscan_bill_data
+from .utils import get_or_create_bill
 from .models import Tag, Bill, UserBillInteraction, UserKeyword
 
 
@@ -11,9 +11,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class BillSerializer(serializers.ModelSerializer):
-    tags = serializers.ListSerializer(
-        child=serializers.CharField(), read_only=True
-    )
+    tags = serializers.ListSerializer(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = Bill
@@ -24,12 +22,8 @@ class UserBillInteractionSerializer(serializers.ModelSerializer):
     legiscan_bill_id = serializers.IntegerField(
         source="bill.legiscan_bill_id", read_only=True
     )
-    bill_number = serializers.CharField(
-        source="bill.bill_number", read_only=True
-    )
-    bill_title = serializers.CharField(
-        source="bill.bill_title", read_only=True
-    )
+    bill_number = serializers.CharField(source="bill.bill_number", read_only=True)
+    bill_title = serializers.CharField(source="bill.bill_title", read_only=True)
 
     class Meta:
         model = UserBillInteraction
@@ -52,9 +46,7 @@ class UserKeywordSerializer(serializers.ModelSerializer):
         """Prevent users from adding duplicate keywords."""
         user = self.context["request"].user
         if UserKeyword.objects.filter(user=user, keyword=value).exists():
-            raise serializers.ValidationError(
-                "You are already tracking this keyword."
-            )
+            raise serializers.ValidationError("You are already tracking this keyword.")
         return value
 
 
@@ -87,23 +79,13 @@ class AdminBillSerializer(serializers.ModelSerializer):
         """
         Creates a Bill if it doesn't exist, fetching data from LegiScan externally.
         """
+
         legiscan_bill_id = self.initial_data.get("legiscan_bill_id")
 
         if not legiscan_bill_id:
             raise serializers.ValidationError("legiscan_bill_id is required.")
 
-        # Check if the bill already exists
-        bill, created = Bill.objects.get_or_create(
-            legiscan_bill_id=legiscan_bill_id
-        )
-
-        # If newly created, fetch data from LegiScan API
-        if created:
-            legiscan_data = fetch_legiscan_bill_data(legiscan_bill_id)
-            if legiscan_data:
-                bill.bill_number = legiscan_data["bill_number"]
-                bill.bill_title = legiscan_data["bill_title"]
-                bill.save()
+        bill = get_or_create_bill(legiscan_bill_id)
 
         # Update allowed fields
         tag_names = validated_data.pop("tag_names", [])
@@ -111,16 +93,20 @@ class AdminBillSerializer(serializers.ModelSerializer):
             setattr(bill, attr, value)
 
         # Update tags
-        tag_instances = [
-            Tag.objects.get_or_create(name=name)[0] for name in tag_names
-        ]
-        bill.tags.set(tag_instances)
+        if tag_names:
+            import pdb
+
+            pdb.set_trace()
+            tag_instances = [
+                Tag.objects.get_or_create(name=name)[0] for name in tag_names
+            ]
+            bill.tags.set(tag_instances)
 
         bill.save()
         return bill
 
     def update(self, instance, validated_data):
-        """Handles PATCH: Updates admin-related fields and tags."""
+        """Update admin-related fields and tags."""
         tag_names = validated_data.pop("tag_names", [])
 
         # Update only allowed fields
@@ -128,16 +114,17 @@ class AdminBillSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         # Update tags
-        tag_instances = [
-            Tag.objects.get_or_create(name=name)[0] for name in tag_names
-        ]
-        instance.tags.set(tag_instances)
+        if tag_names:
+            tag_instances = [
+                Tag.objects.get_or_create(name=name)[0] for name in tag_names
+            ]
+            instance.tags.set(tag_instances)
 
         instance.save()
         return instance
 
     def delete_admin_info(self, instance):
-        """Handles DELETE: Removes admin-related fields but not the bill itself."""
+        """Remove admin-related fields but not the bill itself."""
         instance.admin_stance = None
         instance.admin_note = None
         instance.admin_expanded_analysis_url = None

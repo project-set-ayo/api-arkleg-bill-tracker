@@ -23,7 +23,13 @@ from .serializers import (
     BillSerializer,
     AdminBillSerializer,
 )
-from .utils import fetch_bill, fetch_bills, full_text_search, process_bill
+from .utils import (
+    fetch_bill,
+    fetch_bills,
+    full_text_search,
+    process_bill,
+    get_or_create_bill,
+)
 
 
 class BillListAPIView(APIView):
@@ -331,7 +337,7 @@ class UserBillInteractionViewSet(viewsets.ViewSet):
         Handles POST & PATCH: Creates or updates a user's interaction with a bill.
         If an interaction exists, update it. If not, create a new one.
         """
-        bill, _ = Bill.objects.get_or_create(legiscan_bill_id=legiscan_bill_id)
+        bill = get_or_create_bill(legiscan_bill_id)
 
         interaction, created = UserBillInteraction.objects.update_or_create(
             user=request.user,

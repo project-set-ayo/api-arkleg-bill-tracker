@@ -1,26 +1,22 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-
 from .forms import UserChangeForm, UserCreationForm
 from .models import User
 
 
-class UserAdmin(UserAdmin):
+class CustomUserAdmin(UserAdmin):
     add_form = UserCreationForm
     form = UserChangeForm
     model = User
-    list_display = (
-        "email",
-        "is_staff",
-        "is_active",
-    )
-    list_filter = (
-        "email",
-        "is_staff",
-        "is_active",
-    )
+
+    # Show phone_number in admin list view
+    list_display = ("email", "phone_number", "is_staff", "is_active")
+
+    # Add phone_number to filtering options
+    list_filter = ("email", "phone_number", "is_staff", "is_active")
+
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (None, {"fields": ("email", "phone_number", "password")}),
         (
             "Permissions",
             {
@@ -33,6 +29,7 @@ class UserAdmin(UserAdmin):
             },
         ),
     )
+
     add_fieldsets = (
         (
             None,
@@ -40,6 +37,7 @@ class UserAdmin(UserAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "email",
+                    "phone_number",
                     "password1",
                     "password2",
                     "is_staff",
@@ -50,8 +48,11 @@ class UserAdmin(UserAdmin):
             },
         ),
     )
-    search_fields = ("email",)
+
+    # Allow searching by email and phone number
+    search_fields = ("email", "phone_number")
+
     ordering = ("email",)
 
 
-admin.site.register(User, UserAdmin)
+admin.site.register(User, CustomUserAdmin)
