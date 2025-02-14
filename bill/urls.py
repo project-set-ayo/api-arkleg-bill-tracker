@@ -8,6 +8,11 @@ from .views import (
     UserKeywordViewSet,
     UserBillInteractionViewSet,
     AdminBillViewSet,
+    sessions,
+    sponsors,
+    bills,
+    sponsored_bills,
+    text_search_bills,
 )
 
 
@@ -32,6 +37,12 @@ urlpatterns = [
         BillDetailView.as_view(),
         name="bill-detail",
     ),
+    # search-v2
+    path("search/session/", sessions, name="search-session"),
+    path("search/sponsor/", sponsors, name="search-sponsor"),
+    path("search/bill/", bills, name="search-bill"),
+    path("search/sponsored-bills/", sponsored_bills, name="search-sponsored-bills"),
+    path("search/text/", text_search_bills, name="search-text-bills"),
     # user-interaction
     path(
         "user/interaction/",

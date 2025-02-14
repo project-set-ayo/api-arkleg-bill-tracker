@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import (
     IsAuthenticated,
@@ -279,6 +279,160 @@ class BillDetailView(APIView):
             {"message": "Your interaction has been removed."},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+# search-v2
+
+
+@api_view(["GET"])
+def sessions(request):
+    """
+    Fetches a list of all legislative sessions in Arkansas.
+    """
+    url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getSessionList&state={settings.LEGISCAN_STATE}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        return Response(response.json().get("sessions", []))
+    return Response({"error": "Failed to fetch session list"}, status=500)
+
+
+@api_view(["GET"])
+def sponsors(request):
+    """
+    Fetches sponsors active in a given session based on the session_id.
+
+    {"session": {...}, "people": [{...}]}
+    """
+    session_id = request.query_params.get("session_id")
+
+    if not session_id:
+        return Response({"error": "session_id is required"}, status=400)
+
+    url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getSessionPeople&id={session_id}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        return Response(response.json().get("sessionpeople", []))
+    return Response({"error": "Failed to fetch session sponsors"}, status=500)
+
+
+@api_view(["GET"])
+def bills(request):
+    """
+    Fetches a list of bills for a given session.
+
+    {"session": {...}, "bills": [{...}]}
+    """
+    session_id = request.query_params.get("session_id")
+
+    if not session_id:
+        return Response({"error": "session_id is required"}, status=400)
+
+    url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getMasterList&id={session_id}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json().get("masterlist", {})
+        session_data = data.pop("session")
+        bills_dict_data = data
+
+        return Response(
+            {
+                "session": session_data,
+                "bills": map(lambda bd: bd[1], bills_dict_data.items()),
+            }
+        )
+    return Response({"error": "Failed to fetch bills"}, status=500)
+
+
+@api_view(["GET"])
+def sponsored_bills(request):
+    """
+    Fetches all bills sponsored by a specific person using the getSponsoredList API.
+
+    Expected Query Parameter:
+    - people_id: The ID of the sponsor (required)
+
+    Example response from LegiScan:
+    { "sponsor": {...}, "sessions": [{...}], "bills": [{...}]}
+    """
+    people_id = request.query_params.get("people_id")
+
+    if not people_id:
+        return Response({"error": "people_id is required"}, status=400)
+
+    url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getSponsoredList&id={people_id}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json().get("sponsoredbills", {})
+        return Response(
+            {
+                "sponsor": data.get("sponsor"),
+                "sessions": data.get("sessions"),
+                "bills": data.get("bills"),
+            }
+        )
+    return Response({"error": "Failed to fetch sponsored bills"}, status=500)
+
+
+@api_view(["GET"])
+def text_search_bills(request):
+    """
+    Search bills in a given session using the LegiScan getSearch API.
+
+    Required Query Parameters:
+    - session_id: The ID of the legislative session
+    - query: The search term
+
+    Optional Query Parameters:
+    - page: The page number for pagination (default: 1)
+
+    Example Request:
+    GET /api/bills/search/?session_id=1234&query=education&page=2
+
+    Response Format:
+    {
+        "searchresult": {
+            "summary": {...},
+            "results": [{...}, {...}]
+        }
+    }
+    """
+    session_id = request.query_params.get("session_id")
+    query = request.query_params.get("query")
+    page = request.query_params.get("page", 1)  # Default to page 1
+
+    if not session_id or not query:
+        return Response(
+            {"error": "session_id and query are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Construct LegiScan API URL
+    url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getSearch&id={session_id}&query={query}&page={page}"
+
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json().get("searchresult", {})
+        summary = data.pop("summary")
+
+        return Response(
+            {
+                "summary": summary,
+                "bills": map(lambda bd: bd[1], data.items()),
+            }
+        )
+
+    return Response(
+        {"error": "Failed to fetch search results"},
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+
+
+# interactions & keywords
 
 
 class UserBillInteractionViewSet(viewsets.ViewSet):
