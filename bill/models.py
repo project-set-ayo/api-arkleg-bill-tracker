@@ -8,7 +8,7 @@ User = get_user_model()
 
 # Common stance choices used in both Bill and UserBillInteraction
 STANCE_CHOICES = [
-    ("approve", "Approve"),
+    ("support", "Support"),
     ("oppose", "Oppose"),
     ("watch", "Watch"),
 ]
