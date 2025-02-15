@@ -2,7 +2,6 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     BillListAPIView,
-    BillSearchAPIView,
     BillDetailView,
     BillViewSet,
     UserKeywordViewSet,
@@ -24,13 +23,9 @@ urlpatterns = [
     # order-matters!
     # keywords
     path("user/", include(user_keyword_router.urls)),
-    # search
-    path("search/", BillSearchAPIView.as_view(), name="bill-search"),
     # tags, no-legiscan
     path("search-by-tags/", BillViewSet.as_view({"get": "filter_by_tags"})),
     path("tags/", BillViewSet.as_view({"get": "get_all_tags"})),
-    # list
-    path("", BillListAPIView.as_view(), name="bill-list"),
     # detail
     path(
         "<str:legiscan_bill_id>/",

@@ -58,51 +58,6 @@ class BillListAPIView(APIView):
         )
 
 
-class BillSearchAPIView(APIView):
-    def get(self, request):
-        """
-        Search bills by bill number, full-text keywords, sponsor, or chamber (Senate/House).
-        """
-        bill_number = request.GET.get("bill_number")
-        query = request.GET.get("query")  # Full-text search
-        sponsor = request.GET.get("sponsor")
-        chamber = request.GET.get("chamber")  # "Senate" or "House"
-        type = request.GET.get("type")  # "Bill", "Resolution" or "Joint Resolution"
-
-        results = fetch_bills()[1:]
-
-        if not any([bill_number, query, sponsor, chamber, type]):
-            return Response(results, status=status.HTTP_200_OK)
-
-        # 1. Full-Text Search
-        if query:
-            results = full_text_search(query)[1:]
-
-        # 2. Bill Number Search
-        if bill_number:
-            results = search_by_bill_number(bill_number, results)
-
-        # 3. TODO: Sponsor Search
-        if sponsor:
-            sponsor_url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getSponsoredList&id={sponsor}"
-            response = requests.get(sponsor_url)
-            if response.status_code == 200:
-                sponsored_bills = (
-                    response.json().get("sponsoredbills", {}).get("bills", [])
-                )
-                results.extend(sponsored_bills)
-
-        # 4. Filter by Chamber (Based on Bill Number Prefix)
-        if chamber:
-            results = filter_by_chamber(chamber, results)
-
-        # 5. Filter by Type (Based on Bill Number Prefix)
-        if type:
-            results = filter_by_type(type, results)
-
-        return Response(results, status=status.HTTP_200_OK)
-
-
 class BillViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
