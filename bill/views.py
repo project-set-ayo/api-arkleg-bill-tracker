@@ -454,6 +454,7 @@ class UserBillInteractionViewSet(viewsets.ViewSet):
             defaults={
                 "stance": request.data.get("stance"),
                 "note": request.data.get("note"),
+                "ignore": request.data.get("ignore"),
             },
         )
 

@@ -53,6 +53,7 @@ class UserBillInteraction(TimeStampedModel):
     stance = models.CharField(
         max_length=10, choices=STANCE_CHOICES, null=True, blank=True
     )
+    ignore = models.BooleanField(default=False)
     bill = models.ForeignKey(
         Bill, on_delete=models.CASCADE, related_name="interactions"
     )

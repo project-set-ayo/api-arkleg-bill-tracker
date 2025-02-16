@@ -34,6 +34,7 @@ class UserBillInteractionSerializer(serializers.ModelSerializer):
             "bill_title",
             "stance",
             "note",
+            "ignore",
         ]
 
 
