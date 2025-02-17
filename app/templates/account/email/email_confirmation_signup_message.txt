@@ -1,0 +1,11 @@
+Hello {{ user.get_full_name }},
+
+Thanks for signing up for the Arkansas State Legislative Bill Tracker. To start grading and monitoring bills, please confirm your email address.
+
+Verify Now: {{ activate_url }}
+
+Welcome!
+The Arkleg Bill Tracker Team
+
+This verification link will expire in 72 hours. 
+Questions? Email admin@arklegbilltracker.com
