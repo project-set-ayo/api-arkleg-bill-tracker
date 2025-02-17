@@ -69,6 +69,20 @@ class UserBillInteraction(TimeStampedModel):
         return f"Interaction {self.id} - Bill {self.bill_id}"
 
 
+class BillAnalysis(models.Model):
+    """Represents an expanded analysis document attached to a bill."""
+
+    bill = models.ForeignKey(
+        Bill, on_delete=models.CASCADE, related_name="bill_analyses"
+    )
+    file = models.FileField(upload_to="bill_analyses/", null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"BillAnalysis: {self.bill.bill_number} - {self.file.name}"
+
+
 class UserKeyword(TimeStampedModel):
     """Represents keyword monitored by user."""
 

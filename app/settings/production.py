@@ -1,5 +1,6 @@
 """Production settings for app project."""
 
+import os
 from .base import *
 
 print("Using production settings...")
@@ -81,3 +82,25 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 STATIC_URL = "static/"
 STATIC_ROOT = "/var/www/api-arkleg-bill-tracker/static"
+
+# Storage
+INSTALLED_APPS += ["storages"]
+
+# AWS Configuration
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = os.getenv(
+    "AWS_S3_REGION_NAME", "us-east-1"
+)  # Default to us-east-1
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+
+# Storage settings
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+# Optional settings
+AWS_QUERYSTRING_AUTH = False  # Public access, remove if using signed URLs
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # Cache for 1 day
+
+# Media Files
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"

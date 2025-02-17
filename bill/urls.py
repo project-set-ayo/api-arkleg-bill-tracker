@@ -7,15 +7,21 @@ from .views import (
     UserKeywordViewSet,
     UserBillInteractionViewSet,
     AdminBillViewSet,
+    # search
     sessions,
     sponsors,
     bills,
     sponsored_bills,
     text_search_bills,
+    # analysis
+    list_bill_analyses,
+    upload_bill_analysis,
+    delete_bill_analysis,
 )
 
 
 user_keyword_router = DefaultRouter()
+
 user_keyword_router.register(r"keyword", UserKeywordViewSet, basename="user-keywords")
 
 
@@ -23,6 +29,18 @@ urlpatterns = [
     # order-matters!
     # keywords
     path("user/", include(user_keyword_router.urls)),
+    # analysis
+    path("analysis/<str:bill_id>/", list_bill_analyses, name="bill-analysis-list"),
+    path(
+        "analysis/<str:bill_id>/upload/",
+        upload_bill_analysis,
+        name="bill-analysis-upload",
+    ),
+    path(
+        "analysis/<int:analysis_id>/delete/",
+        delete_bill_analysis,
+        name="bill-analysis-delete",
+    ),
     # tags, no-legiscan
     path("search-by-tags/", BillViewSet.as_view({"get": "filter_by_tags"})),
     path("tags/", BillViewSet.as_view({"get": "get_all_tags"})),

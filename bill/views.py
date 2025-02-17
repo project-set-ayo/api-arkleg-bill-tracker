@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, parser_classes
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import (
     IsAuthenticated,
@@ -13,15 +13,17 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .permissions import IsAdminUser
 from .filters import filter_by_chamber, filter_by_type, search_by_bill_number
-from .models import Tag, Bill, UserBillInteraction, UserKeyword
+from .models import Tag, Bill, UserBillInteraction, UserKeyword, BillAnalysis
 from .serializers import (
     UserBillInteractionSerializer,
     UserKeywordSerializer,
     BillSerializer,
     AdminBillSerializer,
+    BillAnalysisSerializer,
 )
 from .utils import (
     fetch_bill,
@@ -462,6 +464,45 @@ class UserBillInteractionViewSet(viewsets.ViewSet):
             UserBillInteractionSerializer(interaction).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+@api_view(["GET"])
+def list_bill_analyses(request, bill_id):
+    """
+    Retrieve all BillAnalysis documents for a given bill.
+    """
+    analyses = BillAnalysis.objects.filter(bill__legiscan_bill_id=bill_id)
+    serializer = BillAnalysisSerializer(
+        analyses, many=True, context={"request": request}
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser])
+def upload_bill_analysis(request, bill_id):
+    """
+    Upload a BillAnalysis file with a description.
+    If the bill does not exist, create it first.
+    """
+    bill = get_or_create_bill(bill_id)
+
+    serializer = BillAnalysisSerializer(data=request.data, context={"bill": bill})
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+def delete_bill_analysis(request, analysis_id):
+    """Deletes a BillAnalysis record using a POST request."""
+    document = get_object_or_404(BillAnalysis, id=analysis_id)
+    document.delete()
+    return Response(
+        {"message": "Document deleted successfully."}, status=status.HTTP_204_NO_CONTENT
+    )
 
 
 class UserKeywordViewSet(viewsets.ModelViewSet):

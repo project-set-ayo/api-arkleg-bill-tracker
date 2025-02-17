@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .utils import get_or_create_bill
-from .models import Tag, Bill, UserBillInteraction, UserKeyword
+from .models import Tag, Bill, UserBillInteraction, UserKeyword, BillAnalysis
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -36,6 +36,30 @@ class UserBillInteractionSerializer(serializers.ModelSerializer):
             "note",
             "ignore",
         ]
+
+
+class BillAnalysisSerializer(serializers.ModelSerializer):
+    """Serializer for handling bill expanded analysis documents."""
+
+    class Meta:
+        model = BillAnalysis
+        fields = ["id", "bill", "file", "uploaded_at", "description"]
+        read_only_fields = ["id", "uploaded_at", "bill"]
+
+    def validate_file(self, value):
+        """Ensure the uploaded file is a PDF."""
+        if value.content_type != "application/pdf":
+            raise serializers.ValidationError("Only PDF files are allowed.")
+        return value
+
+    def create(self, validated_data):
+        """Ensure the bill is assigned before saving."""
+        bill = self.context.get("bill")  # Get bill from context
+        if not bill:
+            raise serializers.ValidationError({"bill": "Bill is required."})
+
+        validated_data["bill"] = bill  # Attach bill to the BillAnalysis
+        return super().create(validated_data)
 
 
 class UserKeywordSerializer(serializers.ModelSerializer):
