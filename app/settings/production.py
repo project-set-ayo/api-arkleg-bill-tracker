@@ -104,3 +104,31 @@ AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # Cache for 1 day
 
 # Media Files
 MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
+
+# MJML
+MJML_BACKEND_MODE = os.getenv("MJML_BACKEND_MODE")
+MJML_URL = os.getenv("MJML_URL")
+MJML_API_ID = os.getenv("MJML_API_ID")
+MJML_SECRET_KEY = os.getenv("MJML_SECRET_KEY")
+
+MJML_HTTPSERVERS = [
+    {
+        "URL": MJML_URL,
+        "HTTP_AUTH": (MJML_API_ID, MJML_SECRET_KEY),
+    },
+]
+
+
+# Django Q - TODO configure redis
+Q_CLUSTER = {
+    "name": "DjangoQ",
+    "workers": int(os.getenv("Q_CLUSTER_WORKERS", 4)),  # Default to 4 workers
+    "timeout": int(os.getenv("Q_CLUSTER_TIMEOUT", 60)),  # Execution timeout in seconds
+    "retry": int(os.getenv("Q_CLUSTER_RETRY", 200)),  # Retry failed tasks after 200s
+    "queue_limit": int(os.getenv("Q_CLUSTER_QUEUE_LIMIT", 50)),  # Max queued tasks
+    "bulk": int(
+        os.getenv("Q_CLUSTER_BULK", 10)
+    ),  # Number of tasks workers process at a time
+    "orm": "default",
+}

@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     "corsheaders",
     "django_q",
-    "django_extensions",
+    "mjml",
     # Project Apps:
     "core",
     "user",
@@ -165,8 +165,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 SITE_ID = 1
 
 # EMAIL
-DEFAULT_FROM_EMAIL = "team@arklegbilltracker.com"  # TODO: replace with actual
-
+DEFAULT_FROM_EMAIL = "admin@arklegbilltracker.com"
 
 # SOCIAL AUTHENTICATION
 SOCIALACCOUNT_PROVIDERS = {

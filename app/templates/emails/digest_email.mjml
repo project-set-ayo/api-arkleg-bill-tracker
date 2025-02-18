@@ -1,0 +1,54 @@
+<mjml>
+  <mj-head>
+    <mj-title>Daily Bill Digest</mj-title>
+    <mj-preview>Your daily bill updates</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-all>
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#3498DB">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="22px" font-weight="bold">
+          Your Daily Bill Digest
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold">Hello {{ user_full_name }}</mj-text>
+        <mj-text>Here are the latest bills matching your saved keywords:</mj-text>
+      </mj-column>
+    </mj-section>
+
+    {% for item in keyword_list %}
+    <mj-section background-color="#ffffff">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#3498DB">{{ item.keyword }}</mj-text>
+        <mj-text>
+          <ul>
+            {% for bill in item.bills %}
+            <li>
+              <a href="{{ bill.url }}" style="color: #2C3E50; text-decoration: none;">
+                <strong>{{ bill.bill_number }}</strong> - {{ bill.title }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    {% endfor %}
+
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#ccc" />
+        <mj-text font-size="14px" color="#7F8C8D">
+          You are receiving this email because you subscribed to bill
+          alerts.<br />
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
