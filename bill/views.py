@@ -1,22 +1,19 @@
-"""Views for Bill app."""
+"""Bill views."""
 
 import requests
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, parser_classes
-from rest_framework.generics import ListAPIView
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
-    AllowAny,
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from .permissions import IsAdminUser
-from .filters import filter_by_chamber, filter_by_type, search_by_bill_number
 from .models import Tag, Bill, UserBillInteraction, UserKeyword, BillAnalysis
 from .serializers import (
     UserBillInteractionSerializer,
@@ -25,88 +22,60 @@ from .serializers import (
     AdminBillSerializer,
     BillAnalysisSerializer,
 )
-from .utils import (
-    fetch_bill,
-    fetch_bills,
-    full_text_search,
-    process_bill,
-    get_or_create_bill,
-)
+from .legiscan import text_search_session, text_search_state, fetch_bill
 
 
-class BillListAPIView(APIView):
-    def get(self, request):
-        url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getMasterList&state={settings.LEGISCAN_STATE}"
-        response = requests.get(url)
+@api_view(["GET"])
+def all_tags(request):
+    """
+    List of all tags in the system.
 
-        if response.status_code != 200:
-            return Response(
-                {"detail": "Error fetching data."},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
+    Example: /api/bills/tags/
+    {"tags": ["..."]}
+    """
+    tags = Tag.objects.values_list("name", flat=True).distinct()
+    return Response({"tags": list(tags)})
 
-        data = response.json()
 
-        masterlist = data.get("masterlist", {})
-        session = masterlist.pop("session")
+@api_view(["GET"])
+def search_by_tags(request):
+    """
+    Filter bills based on multiple tags.
 
-        merged_bills = list(
-            map(lambda b_data: process_bill(b_data), masterlist.values())
-        )
+    Example: /api/bill/filter-by-tags/?tags=healthcare,budget
+    """
+    tag_names = request.query_params.get("tags", "")
 
+    if not tag_names:
+        return Response({"error": "No tags provided"}, status=400)
+
+    tag_list = [tag.strip() for tag in tag_names.split(",") if tag.strip()]
+    if not tag_list:
+        return Response({"error": "Invalid tag format"}, status=400)
+
+    # Fetch bills that have ALL the provided tags
+    bills = Bill.objects.filter(tags__name__in=tag_list).distinct()
+
+    if not bills.exists():
         return Response(
-            {"session": session, "bills": merged_bills},
-            status=status.HTTP_200_OK,
+            {"message": "No bills found matching the given tags"},
+            status=404,
         )
 
-
-class BillViewSet(viewsets.ViewSet):
-    permission_classes = [AllowAny]
-
-    @action(detail=False, methods=["GET"], url_path="tags")
-    def get_all_tags(self, request):
-        """
-        Returns a list of all tags in the system.
-        Example: /api/bills/tags/
-        """
-        tags = Tag.objects.values_list("name", flat=True).distinct()
-        return Response({"tags": list(tags)})
-
-    @action(detail=False, methods=["GET"], url_path="filter-by-tags")
-    def filter_by_tags(self, request):
-        """
-        Filters bills based on multiple tags.
-        Example: /api/bill/filter-by-tags/?tags=healthcare,budget
-        """
-        tag_names = request.query_params.get("tags", "")
-
-        if not tag_names:
-            return Response({"error": "No tags provided"}, status=400)
-
-        tag_list = [tag.strip() for tag in tag_names.split(",") if tag.strip()]
-        if not tag_list:
-            return Response({"error": "Invalid tag format"}, status=400)
-
-        # Fetch bills that have ALL the provided tags
-        bills = Bill.objects.filter(tags__name__in=tag_list).distinct()
-
-        if not bills.exists():
-            return Response(
-                {"message": "No bills found matching the given tags"},
-                status=404,
-            )
-
-        serializer = BillSerializer(bills, many=True)
-        return Response(serializer.data)
+    serializer = BillSerializer(bills, many=True)
+    return Response(serializer.data)
 
 
 class BillDetailView(APIView):
-    """Handles retrieving bill details and adding/updating user interactions."""
+    """Handle retrieving bill details and adding/updating user interactions."""
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request, legiscan_bill_id):
-        """Retrieve bill details including LegiScan data, admin notes, and user interaction."""
+        """
+        Retrieve bill details including LegiScan data, admin notes,
+        and user interaction.
+        """
         bill_data = fetch_bill(legiscan_bill_id)  # Fetch bill details from API
         bill = Bill.objects.filter(legiscan_bill_id=legiscan_bill_id).first()
 
@@ -137,7 +106,7 @@ class BillDetailView(APIView):
         )
 
     def post(self, request, legiscan_bill_id):
-        """Allows authenticated users to create or update their interaction with a bill."""
+        """Allow authenticated users to create or update their interaction with a bill."""
         if not request.user.is_authenticated:
             return Response(
                 {"error": "Authentication required."},
@@ -175,7 +144,7 @@ class BillDetailView(APIView):
         )
 
     def patch(self, request, legiscan_bill_id):
-        """Allows authenticated users to partially update their interaction with a bill."""
+        """Allow authenticated users to partially update their interaction with a bill."""
         if not request.user.is_authenticated:
             return Response(
                 {"error": "Authentication required."},
@@ -209,7 +178,7 @@ class BillDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, legiscan_bill_id):
-        """Allows authenticated users to delete their interaction with a bill."""
+        """Allow authenticated users to delete their interaction with a bill."""
         if not request.user.is_authenticated:
             return Response(
                 {"error": "Authentication required."},
@@ -236,9 +205,6 @@ class BillDetailView(APIView):
             {"message": "Your interaction has been removed."},
             status=status.HTTP_204_NO_CONTENT,
         )
-
-
-# search-v2
 
 
 @api_view(["GET"])
@@ -351,10 +317,8 @@ def text_search_bills(request):
 
     Response Format:
     {
-        "searchresult": {
-            "summary": {...},
-            "results": [{...}, {...}]
-        }
+        "summary": {...},
+        "bills": [{...}],
     }
     """
     session_id = request.query_params.get("session_id")
@@ -367,25 +331,22 @@ def text_search_bills(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Construct LegiScan API URL
-    url = f"https://api.legiscan.com/?key={settings.LEGISCAN_API_KEY}&op=getSearch&id={session_id}&query={query}&page={page}"
+    leg_response = text_search_session(session_id, query, page)
 
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        data = response.json().get("searchresult", {})
-        summary = data.pop("summary")
-
-        return Response(
-            {
-                "summary": summary,
-                "bills": map(lambda bd: bd[1], data.items()),
-            }
+    if isinstance(leg_response, str):
+        Response(
+            {"error": "Failed to fetch search results"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
+    data = leg_response
+    summary = data.pop("summary")
+
     return Response(
-        {"error": "Failed to fetch search results"},
-        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        {
+            "summary": summary,
+            "bills": map(lambda bd: bd[1], data.items()),
+        }
     )
 
 
@@ -395,13 +356,17 @@ def text_search_bills(request):
 class UserBillInteractionViewSet(viewsets.ViewSet):
     """
     ViewSet for managing user interactions with bills.
-    Handles listing all interactions, retrieving, updating, and deleting a specific interaction.
+
+    Handles listing all interactions, retrieving, updating, and
+    deleting a specific interaction.
     """
 
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, legiscan_bill_id=None):
-        """Handles GET: Retrieve a specific user-bill interaction."""
+        """"""
+
+        "Handles GET: Retrieve a specific user-bill interaction." ""
         bill = get_object_or_404(Bill, legiscan_bill_id=legiscan_bill_id)
         interaction = UserBillInteraction.objects.filter(
             user=request.user, bill=bill
@@ -448,7 +413,7 @@ class UserBillInteractionViewSet(viewsets.ViewSet):
         Handles POST & PATCH: Creates or updates a user's interaction with a bill.
         If an interaction exists, update it. If not, create a new one.
         """
-        bill = get_or_create_bill(legiscan_bill_id)
+        bill = Bill.get_or_create_bill(legiscan_bill_id)
 
         interaction, created = UserBillInteraction.objects.update_or_create(
             user=request.user,
@@ -485,7 +450,7 @@ def upload_bill_analysis(request, bill_id):
     Upload a BillAnalysis file with a description.
     If the bill does not exist, create it first.
     """
-    bill = get_or_create_bill(bill_id)
+    bill = Bill.get_or_create_bill(bill_id)
 
     serializer = BillAnalysisSerializer(data=request.data, context={"bill": bill})
     if serializer.is_valid():
@@ -554,14 +519,11 @@ class UserKeywordViewSet(viewsets.ModelViewSet):
 
         for entry in user_keywords:
             keyword = entry.keyword.lower()
-            bills = full_text_search(keyword)[1:]  # Skip summary result
+            bills = text_search_state(keyword)[1:]  # Skip summary result
             if bills:
                 matched_bills[keyword] = bills
 
         return Response(matched_bills)
-
-
-# admin-only
 
 
 class AdminBillViewSet(viewsets.ViewSet):

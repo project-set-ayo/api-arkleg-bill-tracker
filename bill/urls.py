@@ -1,9 +1,9 @@
+"""Bill urls."""
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    BillListAPIView,
     BillDetailView,
-    BillViewSet,
     UserKeywordViewSet,
     UserBillInteractionViewSet,
     AdminBillViewSet,
@@ -13,6 +13,9 @@ from .views import (
     bills,
     sponsored_bills,
     text_search_bills,
+    # tags - no legiscan api
+    all_tags,
+    search_by_tags,
     # analysis
     list_bill_analyses,
     upload_bill_analysis,
@@ -42,8 +45,8 @@ urlpatterns = [
         name="bill-analysis-delete",
     ),
     # tags, no-legiscan
-    path("search-by-tags/", BillViewSet.as_view({"get": "filter_by_tags"})),
-    path("tags/", BillViewSet.as_view({"get": "get_all_tags"})),
+    path("search-by-tags/", search_by_tags, name="search-tags"),
+    path("tags/", all_tags, name="all-tags"),
     # detail
     path(
         "<str:legiscan_bill_id>/",

@@ -1,6 +1,7 @@
+"""Bill serializers."""
+
 from rest_framework import serializers
 
-from .utils import get_or_create_bill
 from .models import Tag, Bill, UserBillInteraction, UserKeyword, BillAnalysis
 
 
@@ -75,9 +76,6 @@ class UserKeywordSerializer(serializers.ModelSerializer):
         return value
 
 
-# admin-only:
-
-
 class AdminBillSerializer(serializers.ModelSerializer):
     tags = serializers.ListSerializer(
         child=serializers.CharField(), read_only=True
@@ -110,7 +108,7 @@ class AdminBillSerializer(serializers.ModelSerializer):
         if not legiscan_bill_id:
             raise serializers.ValidationError("legiscan_bill_id is required.")
 
-        bill = get_or_create_bill(legiscan_bill_id)
+        bill = Bill.get_or_create_bill(legiscan_bill_id)
 
         # Update allowed fields
         tag_names = validated_data.pop("tag_names", [])
@@ -119,9 +117,6 @@ class AdminBillSerializer(serializers.ModelSerializer):
 
         # Update tags
         if tag_names:
-            import pdb
-
-            pdb.set_trace()
             tag_instances = [
                 Tag.objects.get_or_create(name=name)[0] for name in tag_names
             ]

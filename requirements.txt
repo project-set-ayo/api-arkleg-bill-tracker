@@ -14,4 +14,5 @@ gunicorn==23.0.0
 django_extensions==3.2.3
 boto3==1.36.21
 django-storages==1.14.5
-django-mjml[requests]
+django-mjml[requests]==1.3
+typing-extensions==4.12.2

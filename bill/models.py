@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from model_utils.models import TimeStampedModel
 
+from .legiscan import fetch_bill
+
 User = get_user_model()
 
 # Common stance choices used in both Bill and UserBillInteraction
@@ -44,6 +46,28 @@ class Bill(models.Model):
 
     def __str__(self):
         return f"Bill {self.bill_number}"
+
+    @classmethod
+    def get_or_create_bill(cls, legiscan_bill_id):
+        """
+        Retrieve a Bill from the database.
+
+        Create and populate it with legiscan data if necessary.
+        """
+        bill, created = cls.objects.get_or_create(
+            legiscan_bill_id=legiscan_bill_id,
+            defaults={"bill_title": None, "bill_number": None},
+        )
+
+        # If bill was just created or lacks essential data, fetch from API
+        if created or not bill.bill_title or not bill.bill_number:
+            bill_data = fetch_bill(legiscan_bill_id)
+            if bill_data:
+                bill.bill_title = bill_data.get("title", "Unknown Title")
+                bill.bill_number = bill_data.get("bill_number", "Unknown Number")
+                bill.save()
+
+        return bill
 
 
 class UserBillInteraction(TimeStampedModel):

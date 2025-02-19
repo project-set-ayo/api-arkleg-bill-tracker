@@ -6,7 +6,7 @@ from django.core.mail import send_mail
 from django_q.tasks import Schedule, async_task
 
 from .models import UserKeyword, UserBillInteraction
-from .utils import full_text_search
+from .legiscan import text_search_state
 from .emails import format_email_digest
 
 
@@ -49,7 +49,7 @@ def check_bills_for_keywords():
         user = entry.user
         ignored_bill_numbers = ignored_bills_by_user.get(user.id, set())
 
-        matching_bills = full_text_search(entry.keyword.lower())[1:]  # Skip first item
+        matching_bills = text_search_state(entry.keyword.lower())[1:]  # Skip summary
 
         # Use filter() to exclude ignored bills and non-upcoming bills
         filtered_bills = list(
