@@ -10,15 +10,13 @@ DEBUG = False
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
-BASE_FRONTEND_URL = os.getenv(
-    "BASE_FRONTEND_URL", "https://staging.arklegbilltracker.com"
-)
+BASE_FRONTEND_URL = os.getenv("BASE_FRONTEND_URL", "https://app.arklegbilltracker.com")
 
 ALLOWED_HOSTS = [
     "api.arklegbilltracker.com",
     "52.36.229.71",
     "arklegbilltracker.com",
-    "staging.arklegbilltracker.com",
+    "app.arklegbilltracker.com",
     "localhost",
 ]
 
@@ -26,7 +24,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://api.arklegbilltracker.com",
     "https://52.36.229.71",
     "https://arklegbilltracker.com",
-    "https://staging.arklegbilltracker.com",
+    "https://app.arklegbilltracker.com",
     "http://localhost",
 ]
 
