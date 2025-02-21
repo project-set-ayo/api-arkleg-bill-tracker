@@ -103,6 +103,10 @@ class BillAnalysis(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=255, blank=True, null=True)
 
+    class Meta:
+        verbose_name = "Bill Analysis"
+        verbose_name_plural = "Bill Analyses"
+
     def __str__(self):
         return f"BillAnalysis: {self.bill.bill_number} - {self.file.name}"
 
