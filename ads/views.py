@@ -3,7 +3,6 @@
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django.contrib.auth.models import Group
 from .models import Ad
 from .serializers import AdSerializer
 import random

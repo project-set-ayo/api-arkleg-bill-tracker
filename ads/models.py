@@ -6,7 +6,7 @@ from model_utils.models import TimeStampedModel
 
 class Ad(TimeStampedModel):
     title = models.CharField(max_length=255)
-    image = models.URLField()  # Using URLField for external images
+    image = models.FileField(upload_to="ads/", null=True, blank=True)
     link = models.URLField()
     weight = models.PositiveIntegerField(
         default=1
