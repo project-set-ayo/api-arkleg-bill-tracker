@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_q",
     "mjml",
+    "citext",
     # Project Apps:
     "core",
     "user",
