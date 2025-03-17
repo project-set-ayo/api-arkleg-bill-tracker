@@ -1,6 +1,6 @@
 import requests
 from django.conf import settings
-from typing import Union
+from typing import Union, Callable
 from typing_extensions import TypeAlias
 
 
@@ -46,6 +46,11 @@ def text_search_state(query) -> LegResponse:
         return f"text search failed: status_code {response.status_code}"
 
     return list(response.json().get("searchresult", {}).values())
+
+
+def text_search_state_no_summary(query: str) -> Callable[[str], list]:
+    """Run text search without summary."""
+    return text_search_state(query)[1:]  # Skip summary
 
 
 def text_search_session(session_id, query, page) -> LegResponse:
