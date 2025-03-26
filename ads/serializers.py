@@ -7,7 +7,10 @@ from .models import Ad
 class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
-        fields = ["id", "title", "image", "link", "weight"]
+        fields = ["id", "title", "image", "link", "weight", "style"]
+
+    def create(self, validated_data):
+        return Ad.objects.create(**validated_data)
 
     def validate(self, data):
         """Ensure image is required when creating an ad, but not when updating."""
