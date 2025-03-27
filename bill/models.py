@@ -8,7 +8,7 @@ from .legiscan import fetch_bill
 
 User = get_user_model()
 
-# Common stance choices used in both Bill and UserBillInteraction
+
 STANCE_CHOICES = [
     ("support", "Support"),
     ("oppose", "Oppose"),
@@ -26,7 +26,8 @@ class Tag(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
-        return self.name
+        """Represent Tag as str."""
+        return f"Tag: {self.name}"
 
 
 class Bill(models.Model):
@@ -45,7 +46,8 @@ class Bill(models.Model):
     admin_expanded_analysis_url = models.URLField(null=True, blank=True)
 
     def __str__(self):
-        return f"Bill {self.bill_number}"
+        """Represent Bill as str."""
+        return f"Bill: {self.bill_number}"
 
     @classmethod
     def get_or_create_bill(cls, legiscan_bill_id):
@@ -90,7 +92,8 @@ class UserBillInteraction(TimeStampedModel):
         ordering = ["modified"]
 
     def __str__(self):
-        return f"Interaction {self.id} - Bill {self.bill_id}"
+        """Represent UserBillInteraction as str."""
+        return f"UserBillInteraction: {self.id} - Bill {self.bill_id}"
 
 
 class BillAnalysis(models.Model):
@@ -108,6 +111,7 @@ class BillAnalysis(models.Model):
         verbose_name_plural = "Bill Analyses"
 
     def __str__(self):
+        """Represent BillAnalysis as str."""
         return f"BillAnalysis: {self.bill.bill_number} - {self.file.name}"
 
 
@@ -121,4 +125,5 @@ class UserKeyword(TimeStampedModel):
         ordering = ["created"]
 
     def __str__(self):
-        return f"Keyword '{self.keyword}' for {self.user}"
+        """Represent UserKeyword as str."""
+        return f"Keyword: '{self.keyword}' for {self.user}"
