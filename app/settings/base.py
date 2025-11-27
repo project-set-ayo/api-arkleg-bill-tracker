@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "django_q",
     "mjml",
     "citext",
+    "django_celery_beat",
     # Project Apps:
     "core",
     "user",
