@@ -194,7 +194,7 @@ PROJECT_NAME = "Arkleg Bill Tracker"
 # LEGISCAN
 LEGISCAN_API_KEY = os.getenv("LEGISCAN_API_KEY")
 LEGISCAN_STATE = "AR"
-print("LEGISCAN_API_KEY", LEGISCAN_API_KEY)
+print("LEGISCAN_API_KEY ", LEGISCAN_API_KEY)
 
 # Django Q
 Q_CLUSTER = {
@@ -212,3 +212,9 @@ Q_CLUSTER = {
 # Media
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
+# Celery
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
