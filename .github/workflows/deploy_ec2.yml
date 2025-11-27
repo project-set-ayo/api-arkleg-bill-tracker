@@ -28,5 +28,5 @@ jobs:
             pip install -r requirements.txt
             python manage.py migrate
             echo yes | python manage.py collectstatic
-            sudo systemctl restart gunicorn nginx
+            sudo systemctl restart gunicorn celery celerybeat nginx
           EOF
