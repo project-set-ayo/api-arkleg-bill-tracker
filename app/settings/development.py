@@ -2,6 +2,7 @@
 
 import os
 from .base import *  # noqa
+from .base import INSTALLED_APPS
 
 print("Using development settings...")
 
@@ -81,7 +82,6 @@ MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 
 # MJML
 MJML_BACKEND_MODE = os.getenv("MJML_BACKEND_MODE")
-# MJML_EXEC_CMD = os.getenv("MJML_EXEC_CMD")
 MJML_URL = os.getenv("MJML_URL")
 MJML_API_ID = os.getenv("MJML_API_ID")
 MJML_SECRET_KEY = os.getenv("MJML_SECRET_KEY")
