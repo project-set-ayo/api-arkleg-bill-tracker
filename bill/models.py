@@ -40,7 +40,6 @@ class Bill(models.Model):
     )
     bill_number = models.CharField(
         max_length=100,
-        unique=True,
         null=True,
         blank=True,
     )
