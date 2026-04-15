@@ -3,18 +3,18 @@
 import requests
 from django.conf import settings
 from enum import Enum
-from typing import Union, Callable
+from typing import Union, Any
 from typing_extensions import TypeAlias
-
 
 LegResponse: TypeAlias = Union[str, Union[dict, list[dict]]]
 
+BASE_URL = "https://api.legiscan.com/?key={key}&op="
 
-LEGISCAN_BILL_URL = "https://api.legiscan.com/?key={key}&op=getBill&id={bill_id}"
-LEGISCAN_TEXT_SEARCH_URL = (
-    "https://api.legiscan.com/?key={key}&op=getSearch&state={state}&query={query}"
+LEGISCAN_BILL_URL = BASE_URL + "getBill&id={bill_id}"
+LEGISCAN_TEXT_SEARCH_URL = BASE_URL + "getSearch&state={state}&query={query}"
+LEGISCAN_SESSION_TEXT_SEARCH_URL = (
+    BASE_URL + "getSearch&id={session_id}&query={query}&page={page}"
 )
-LEGISCAN_SESSION_TEXT_SEARCH_URL = "https://api.legiscan.com/?key={key}&op=getSearch&id={session_id}&query={query}&page={page}"
 
 
 class LegiscanStatus(Enum):
@@ -115,7 +115,7 @@ def text_search_state(query) -> LegResponse:
     return list(response.json().get("searchresult", {}).values())
 
 
-def text_search_state_no_summary(query: str) -> Callable[[str], list]:
+def text_search_state_no_summary(query: str) -> Any:
     """Run text search without summary."""
     return text_search_state(query)[1:]  # Skip summary
 

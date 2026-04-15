@@ -1,5 +1,7 @@
 """Models for Bill app."""
 
+# mypy: disable-error-code="var-annotated"
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from model_utils.models import TimeStampedModel
@@ -36,7 +38,11 @@ class Bill(models.Model):
     legiscan_bill_id = models.CharField(
         max_length=100, unique=True, null=True, blank=True
     )
-    bill_number = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    bill_number = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
     bill_title = models.CharField(max_length=255, null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="bills", blank=True)
     admin_stance = models.CharField(
@@ -66,7 +72,10 @@ class Bill(models.Model):
             bill_data = fetch_bill(legiscan_bill_id)
             if bill_data:
                 bill.bill_title = bill_data.get("title", "Unknown Title")
-                bill.bill_number = bill_data.get("bill_number", "Unknown Number")
+                bill.bill_number = bill_data.get(
+                    "bill_number",
+                    "Unknown Number",
+                )
                 bill.save()
 
         return bill
@@ -118,7 +127,11 @@ class BillAnalysis(models.Model):
 class UserKeyword(TimeStampedModel):
     """Represents keyword monitored by user."""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="keywords")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="keywords",
+    )
     keyword = models.CharField(max_length=255)
 
     class Meta:

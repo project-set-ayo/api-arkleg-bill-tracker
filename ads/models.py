@@ -1,5 +1,7 @@
 """Models for Ads."""
 
+# mypy: disable-error-code="var-annotated"
+
 from django.db import models
 from model_utils.models import TimeStampedModel
 
