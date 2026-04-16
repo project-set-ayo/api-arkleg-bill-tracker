@@ -1,10 +1,13 @@
 """Legiscan related operations."""
 
+import logging
 import requests
 from django.conf import settings
 from enum import Enum
-from typing import Union, Any
+from typing import Union, Any, Optional
 from typing_extensions import TypeAlias
+
+logger = logging.getLogger(__name__)
 
 LegResponse: TypeAlias = Union[str, Union[dict, list[dict]]]
 
@@ -15,6 +18,7 @@ LEGISCAN_TEXT_SEARCH_URL = BASE_URL + "getSearch&state={state}&query={query}"
 LEGISCAN_SESSION_TEXT_SEARCH_URL = (
     BASE_URL + "getSearch&id={session_id}&query={query}&page={page}"
 )
+LEGISCAN_SESSION_LIST_URL = BASE_URL + "getSessionList&state={state}"
 
 
 class LegiscanStatus(Enum):
@@ -139,3 +143,27 @@ def text_search_session(session_id, query, page) -> LegResponse:
         return f"text search failed: status_code {response.status_code}"
 
     return response.json().get("searchresult", {})
+
+
+def fetch_latest_session_id() -> Optional[str]:
+    """Fetch the most recent session ID from LegiScan."""
+    logger.info("Fetching session list from legiscan")
+    url = LEGISCAN_SESSION_LIST_URL.format(
+        key=settings.LEGISCAN_API_KEY,
+        state=settings.LEGISCAN_STATE,
+    )
+
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        logger.error(
+            "Failed to fetch sessions: status code %s",
+            response.status_code,
+        )
+    else:
+        sessions = response.json().get("sessions", [])
+
+        if sessions:
+            return str(sessions[0]["session_id"])
+
+    return None
