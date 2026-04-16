@@ -1,20 +1,24 @@
 """Bill tasks."""
 
+import logging
 from datetime import datetime
 from django.conf import settings
 from django.core.mail import send_mail
 from django_q.tasks import Schedule, async_task
+from celery import shared_task
 
 from typing import Callable, Dict, List
 from typing_extensions import TypeAlias
 
-from .models import User, UserKeyword, UserBillInteraction
-from .legiscan import text_search_state_no_summary
+from .models import User, UserKeyword, AppSettings, UserBillInteraction
+from .legiscan import text_search_state_no_summary, fetch_latest_session_id
 from .emails import format_email_digest
-
+from .services import transition_session
 
 KeywordBills: TypeAlias = Dict[str, List[dict]]
 UserKeywordsBills: TypeAlias = Dict[User, KeywordBills]
+
+logger = logging.getLogger(__name__)
 
 
 def is_upcoming_bill(bill: dict) -> bool:
@@ -126,3 +130,24 @@ def send_mail_for_keywords() -> None:
         )
 
     return f"Queued {len(user_emails_data)} HTML digest emails."
+
+
+@shared_task
+def check_for_new_session_task():
+    """Check for a new legislative session."""
+    logger.info("Checking for new legislative session.")
+
+    try:
+        latest_session_id = fetch_latest_session_id()
+        archived = transition_session(latest_session_id)
+
+        if archived:
+            logger.info(
+                "New session %s detected. Active bills are archived.",
+                latest_session_id,
+            )
+        else:
+            logger.info("No new session detected. No action taken.")
+
+    except Exception as e:
+        logger.error("Failed to run session check: %s", e)

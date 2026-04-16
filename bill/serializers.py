@@ -1,8 +1,16 @@
 """Bill serializers."""
 
+# mypy: disable-error-code="var-annotated"
+
 from rest_framework import serializers
 
-from .models import Tag, Bill, UserBillInteraction, UserKeyword, BillAnalysis
+from .models import (
+    Tag,
+    Bill,
+    UserBillInteraction,
+    UserKeyword,
+    BillAnalysis,
+)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -12,7 +20,10 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class BillSerializer(serializers.ModelSerializer):
-    tags = serializers.ListSerializer(child=serializers.CharField(), read_only=True)
+    tags = serializers.ListSerializer(
+        child=serializers.CharField(),
+        read_only=True,
+    )
 
     class Meta:
         model = Bill
@@ -23,8 +34,14 @@ class UserBillInteractionSerializer(serializers.ModelSerializer):
     legiscan_bill_id = serializers.IntegerField(
         source="bill.legiscan_bill_id", read_only=True
     )
-    bill_number = serializers.CharField(source="bill.bill_number", read_only=True)
-    bill_title = serializers.CharField(source="bill.bill_title", read_only=True)
+    bill_number = serializers.CharField(
+        source="bill.bill_number",
+        read_only=True,
+    )
+    bill_title = serializers.CharField(
+        source="bill.bill_title",
+        read_only=True,
+    )
 
     class Meta:
         model = UserBillInteraction
@@ -36,6 +53,7 @@ class UserBillInteractionSerializer(serializers.ModelSerializer):
             "stance",
             "note",
             "ignore",
+            "is_archived",
         ]
 
 

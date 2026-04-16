@@ -18,6 +18,15 @@ STANCE_CHOICES = [
 ]
 
 
+class AppSettings(models.Model):
+    """Stores application state."""
+
+    current_session_id = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"Current Session ID: {self.current_session_id}"
+
+
 class Tag(models.Model):
     """
     Represents tag.
@@ -88,6 +97,7 @@ class UserBillInteraction(TimeStampedModel):
     stance = models.CharField(
         max_length=10, choices=STANCE_CHOICES, null=True, blank=True
     )
+    is_archived = models.BooleanField(default=False)
     ignore = models.BooleanField(default=False)
     bill = models.ForeignKey(
         Bill, on_delete=models.CASCADE, related_name="interactions"
